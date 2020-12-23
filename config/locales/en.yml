@@ -752,6 +752,8 @@ en:
       guide_link_text: Everyone can contribute.
     sensitive_content: Sensitive content
     toot_layout: Post layout
+    advanced_preferences: Advanced Preferences
+    user_css: User CSS
   application_mailer:
     notification_preferences: Change e-mail preferences
     salutation: "%{name},"

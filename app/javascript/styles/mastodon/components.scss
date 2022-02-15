@@ -5103,6 +5103,70 @@ a.status-card.compact:hover {
   max-width: 700px;
 }
 
+.report-dialog-modal {
+  max-width: 90vw;
+  width: 480px;
+  height: 80vh;
+  background: lighten($ui-secondary-color, 8%);
+  color: $inverted-text-color;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  flex-direction: column;
+  display: flex;
+
+  &__container {
+    box-sizing: border-box;
+    border-top: 1px solid $ui-secondary-color;
+    padding: 20px;
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  &__title {
+    font-size: 28px;
+    line-height: 33px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  &__lead {
+    font-size: 17px;
+    line-height: 22px;
+    color: lighten($inverted-text-color, 16%);
+    margin-bottom: 20px;
+  }
+
+  &__actions {
+    margin-top: 20px;
+  }
+
+  &__statuses {
+    flex: 1 1 auto;
+    max-height: 50vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    .status-check-box:last-child {
+      border-bottom: 0;
+    }
+  }
+
+  .status__content a {
+    color: $highlight-text-color;
+  }
+
+  .status__content,
+  .status__content p {
+    color: $inverted-text-color;
+  }
+
+  .flex-spacer {
+    background: transparent;
+  }
+}
+
 .report-modal__container {
   display: flex;
   border-top: 1px solid $ui-secondary-color;

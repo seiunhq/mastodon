@@ -3,9 +3,11 @@
   %head
     %meta{ 'http-equiv' => 'Content-Type', 'content' => 'text/html; charset=utf-8' }/
     %meta{ name: 'viewport', content: 'width=device-width, initial-scale=1.0, shrink-to-fit=no' }
+    %link{ rel: 'preconnect', href: 'https://koruri.chillout.chat' }/
 
     %title/
-
+    
+    = stylesheet_link_tag 'https://koruri.chillout.chat/koruri.css', skip_pipeline: true, media: 'all'
     = stylesheet_pack_tag 'mailer'
   %body{ dir: locale_direction }
     %table.email-table{ cellspacing: 0, cellpadding: 0 }

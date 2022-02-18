@@ -11,6 +11,9 @@
     - if storage_host?
       %link{ rel: 'dns-prefetch', href: storage_host }/
 
+    %link{ rel: 'preconnect', href: 'https://koruri.chillout.chat' }/
+    %link{ rel: 'preconnect', href: 'https://fonts.googleapis.com' }/
+    %link{ rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: true }/
     %link{ rel: 'icon', href: favicon_path, type: 'image/x-icon' }/
     %link{ rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' }/
     %link{ rel: 'mask-icon', href: '/mask-icon.svg', color: '#2B90D9' }/
@@ -20,6 +23,9 @@
     %meta{ name: 'apple-mobile-web-app-capable', content: 'yes' }/
 
     %title= content_for?(:page_title) ? safe_join([yield(:page_title).chomp.html_safe, title], ' - ') : title
+
+    = stylesheet_link_tag 'https://koruri.chillout.chat/koruri.css', skip_pipeline: true, media: 'all'
+    = stylesheet_link_tag 'https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400&display=swap', skip_pipeline: true, media: 'all'
 
     = stylesheet_pack_tag 'common', media: 'all', crossorigin: 'anonymous'
     = stylesheet_pack_tag current_theme, media: 'all', crossorigin: 'anonymous'

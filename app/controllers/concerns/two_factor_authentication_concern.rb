@@ -60,6 +60,7 @@ module TwoFactorAuthenticationConcern
       sign_in(user)
       render json: { redirect_path: root_path }, status: :ok
     else
+      on_authentication_failure(user, :webauthn, :invalid_credential)
       render json: { error: t('webauthn_credentials.invalid_credential') }, status: :unprocessable_entity
     end
   end
@@ -69,6 +70,7 @@ module TwoFactorAuthenticationConcern
       clear_attempt_from_session
       sign_in(user)
     else
+      on_authentication_failure(user, :otp, :invalid_otp_token)
       flash.now[:alert] = I18n.t('users.invalid_otp_token')
       prompt_for_two_factor(user)
     end

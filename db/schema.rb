@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2021_07_22_120340) do
+ActiveRecord::Schema.define(version: 2021_08_08_071221) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -511,6 +511,18 @@ ActiveRecord::Schema.define(version: 2021_07_22_120340) do
     t.index ["account_id"], name: "index_lists_on_account_id"
   end
 
+  create_table "login_activities", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "authentication_method"
+    t.string "provider"
+    t.boolean "success"
+    t.string "failure_reason"
+    t.inet "ip"
+    t.string "user_agent"
+    t.datetime "created_at"
+    t.index ["user_id"], name: "index_login_activities_on_user_id"
+  end
+
   create_table "markers", force: :cascade do |t|
     t.bigint "user_id"
     t.string "timeline", default: "", null: false
@@ -831,11 +843,13 @@ ActiveRecord::Schema.define(version: 2021_07_22_120340) do
     t.bigint "in_reply_to_account_id"
     t.bigint "poll_id"
     t.datetime "deleted_at"
+    t.bigint "quote_id"
     t.index ["account_id", "id", "visibility", "updated_at"], name: "index_statuses_20190820", order: { id: :desc }, where: "(deleted_at IS NULL)"
     t.index ["id", "account_id"], name: "index_statuses_local_20190824", order: { id: :desc }, where: "((local OR (uri IS NULL)) AND (deleted_at IS NULL) AND (visibility = 0) AND (reblog_of_id IS NULL) AND ((NOT reply) OR (in_reply_to_account_id = account_id)))"
     t.index ["id", "account_id"], name: "index_statuses_public_20200119", order: { id: :desc }, where: "((deleted_at IS NULL) AND (visibility = 0) AND (reblog_of_id IS NULL) AND ((NOT reply) OR (in_reply_to_account_id = account_id)))"
     t.index ["in_reply_to_account_id"], name: "index_statuses_on_in_reply_to_account_id"
     t.index ["in_reply_to_id"], name: "index_statuses_on_in_reply_to_id"
+    t.index ["quote_id"], name: "index_statuses_on_quote_id"
     t.index ["reblog_of_id", "account_id"], name: "index_statuses_on_reblog_of_id_and_account_id"
     t.index ["uri"], name: "index_statuses_on_uri", unique: true
   end
@@ -932,6 +946,7 @@ ActiveRecord::Schema.define(version: 2021_07_22_120340) do
     t.datetime "sign_in_token_sent_at"
     t.string "webauthn_id"
     t.inet "sign_up_ip"
+    t.boolean "skip_sign_in_token"
     t.index ["account_id"], name: "index_users_on_account_id"
     t.index ["confirmation_token"], name: "index_users_on_confirmation_token", unique: true
     t.index ["created_by_application_id"], name: "index_users_on_created_by_application_id"
@@ -1028,6 +1043,7 @@ ActiveRecord::Schema.define(version: 2021_07_22_120340) do
   add_foreign_key "list_accounts", "follows", on_delete: :cascade
   add_foreign_key "list_accounts", "lists", on_delete: :cascade
   add_foreign_key "lists", "accounts", on_delete: :cascade
+  add_foreign_key "login_activities", "users", on_delete: :cascade
   add_foreign_key "markers", "users", on_delete: :cascade
   add_foreign_key "media_attachments", "accounts", name: "fk_96dd81e81b", on_delete: :nullify
   add_foreign_key "media_attachments", "scheduled_statuses", on_delete: :nullify

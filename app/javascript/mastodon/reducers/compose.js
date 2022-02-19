@@ -5,6 +5,8 @@ import {
   COMPOSE_REPLY,
   COMPOSE_REPLY_CANCEL,
   COMPOSE_DIRECT,
+  COMPOSE_QUOTE,
+  COMPOSE_QUOTE_CANCEL,
   COMPOSE_MENTION,
   COMPOSE_SUBMIT_REQUEST,
   COMPOSE_SUBMIT_SUCCESS,
@@ -39,6 +41,9 @@ import {
   COMPOSE_POLL_OPTION_CHANGE,
   COMPOSE_POLL_OPTION_REMOVE,
   COMPOSE_POLL_SETTINGS_CHANGE,
+  INIT_MEDIA_EDIT_MODAL,
+  COMPOSE_CHANGE_MEDIA_DESCRIPTION,
+  COMPOSE_CHANGE_MEDIA_FOCUS,
 } from '../actions/compose';
 import { TIMELINE_DELETE } from '../actions/timelines';
 import { STORE_HYDRATE } from '../actions/store';
@@ -59,6 +64,8 @@ const initialState = ImmutableMap({
   caretPosition: null,
   preselectDate: null,
   in_reply_to: null,
+  quote_from: null,
+  quote_from_url: null,
   is_composing: false,
   is_submitting: false,
   is_changing_upload: false,
@@ -76,6 +83,13 @@ const initialState = ImmutableMap({
   resetFileKey: Math.floor((Math.random() * 0x10000)),
   idempotencyKey: null,
   tagHistory: ImmutableList(),
+  media_modal: ImmutableMap({
+    id: null,
+    description: '',
+    focusX: 0,
+    focusY: 0,
+    dirty: false,
+  }),
 });
 
 const initialPoll = ImmutableMap({
@@ -102,6 +116,7 @@ function clearAll(state) {
     map.set('is_submitting', false);
     map.set('is_changing_upload', false);
     map.set('in_reply_to', null);
+    map.set('quote_from', null);
     map.set('privacy', state.get('default_privacy'));
     map.set('sensitive', false);
     map.update('media_attachments', list => list.clear());
@@ -247,6 +262,17 @@ const updateSuggestionTags = (state, token) => {
   });
 };
 
+const rejectQuoteAltText = html => {
+  const fragment = domParser.parseFromString(html, 'text/html').documentElement;
+
+  const quote_inline = fragment.querySelector('span.quote-inline');
+  if (quote_inline) {
+    quote_inline.remove();
+  }
+
+  return fragment.innerHTML;
+};
+
 export default function compose(state = initialState, action) {
   switch(action.type) {
   case STORE_HYDRATE:
@@ -292,6 +318,8 @@ export default function compose(state = initialState, action) {
   case COMPOSE_REPLY:
     return state.withMutations(map => {
       map.set('in_reply_to', action.status.get('id'));
+      map.set('quote_from', null);
+      map.set('quote_from_url', null);
       map.set('text', statusToTextMentions(state, action.status));
       map.set('privacy', privacyPreference(action.status.get('visibility'), state.get('default_privacy')));
       map.set('focusDate', new Date());
@@ -307,10 +335,32 @@ export default function compose(state = initialState, action) {
         map.set('spoiler_text', '');
       }
     });
+  case COMPOSE_QUOTE:
+    return state.withMutations(map => {
+      map.set('in_reply_to', null);
+      map.set('quote_from', action.status.get('id'));
+      map.set('quote_from_url', action.status.get('url'));
+      map.set('text', '');
+      map.set('privacy', privacyPreference(action.status.get('visibility'), state.get('default_privacy')));
+      map.set('focusDate', new Date());
+      map.set('preselectDate', new Date());
+      map.set('idempotencyKey', uuid());
+
+      if (action.status.get('spoiler_text').length > 0) {
+        map.set('spoiler', true);
+        map.set('spoiler_text', action.status.get('spoiler_text'));
+      } else {
+        map.set('spoiler', false);
+        map.set('spoiler_text', '');
+      }
+    });
   case COMPOSE_REPLY_CANCEL:
+  case COMPOSE_QUOTE_CANCEL:
   case COMPOSE_RESET:
     return state.withMutations(map => {
       map.set('in_reply_to', null);
+      map.set('quote_from', null);
+      map.set('quote_from_url', null);
       map.set('text', '');
       map.set('spoiler', false);
       map.set('spoiler_text', '');
@@ -354,6 +404,19 @@ export default function compose(state = initialState, action) {
 
         return item;
       }));
+  case INIT_MEDIA_EDIT_MODAL:
+    const media =  state.get('media_attachments').find(item => item.get('id') === action.id);
+    return state.set('media_modal', ImmutableMap({
+      id: action.id,
+      description: media.get('description') || '',
+      focusX: media.getIn(['meta', 'focus', 'x'], 0),
+      focusY: media.getIn(['meta', 'focus', 'y'], 0),
+      dirty: false,
+    }));
+  case COMPOSE_CHANGE_MEDIA_DESCRIPTION:
+    return state.setIn(['media_modal', 'description'], action.description).setIn(['media_modal', 'dirty'], true);
+  case COMPOSE_CHANGE_MEDIA_FOCUS:
+    return state.setIn(['media_modal', 'focusX'], action.focusX).setIn(['media_modal', 'focusY'], action.focusY).setIn(['media_modal', 'dirty'], true);
   case COMPOSE_MENTION:
     return state.withMutations(map => {
       map.update('text', text => [text.trim(), `@${action.account.get('acct')} `].filter((str) => str.length !== 0).join(' '));
@@ -390,6 +453,7 @@ export default function compose(state = initialState, action) {
   case COMPOSE_UPLOAD_CHANGE_SUCCESS:
     return state
       .set('is_changing_upload', false)
+      .setIn(['media_modal', 'dirty'], false)
       .update('media_attachments', list => list.map(item => {
         if (item.get('id') === action.media.id) {
           return fromJS(action.media);
@@ -399,8 +463,10 @@ export default function compose(state = initialState, action) {
       }));
   case REDRAFT:
     return state.withMutations(map => {
-      map.set('text', action.raw_text || unescapeHTML(expandMentions(action.status)));
+      map.set('text', action.raw_text || unescapeHTML(rejectQuoteAltText(expandMentions(action.status))));
       map.set('in_reply_to', action.status.get('in_reply_to_id'));
+      map.set('quote_from', action.status.getIn(['quote', 'id']));
+      map.set('quote_from_url', action.status.getIn(['quote', 'url']));
       map.set('privacy', action.status.get('visibility'));
       map.set('media_attachments', action.status.get('media_attachments'));
       map.set('focusDate', new Date());

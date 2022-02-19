@@ -9,6 +9,7 @@ import { importFetchedAccounts } from './importer';
 import { updateTimeline } from './timelines';
 import { showAlertForError } from './alerts';
 import { showAlert } from './alerts';
+import { openModal } from './modal';
 import { defineMessages } from 'react-intl';
 
 let cancelFetchComposeSuggestionsAccounts, cancelFetchComposeSuggestionsTags;
@@ -20,6 +21,8 @@ export const COMPOSE_SUBMIT_FAIL     = 'COMPOSE_SUBMIT_FAIL';
 export const COMPOSE_REPLY           = 'COMPOSE_REPLY';
 export const COMPOSE_REPLY_CANCEL    = 'COMPOSE_REPLY_CANCEL';
 export const COMPOSE_DIRECT          = 'COMPOSE_DIRECT';
+export const COMPOSE_QUOTE           = 'COMPOSE_QUOTE';
+export const COMPOSE_QUOTE_CANCEL    = 'COMPOSE_QUOTE_CANCEL';
 export const COMPOSE_MENTION         = 'COMPOSE_MENTION';
 export const COMPOSE_RESET           = 'COMPOSE_RESET';
 export const COMPOSE_UPLOAD_REQUEST  = 'COMPOSE_UPLOAD_REQUEST';
@@ -63,6 +66,11 @@ export const COMPOSE_POLL_OPTION_CHANGE   = 'COMPOSE_POLL_OPTION_CHANGE';
 export const COMPOSE_POLL_OPTION_REMOVE   = 'COMPOSE_POLL_OPTION_REMOVE';
 export const COMPOSE_POLL_SETTINGS_CHANGE = 'COMPOSE_POLL_SETTINGS_CHANGE';
 
+export const INIT_MEDIA_EDIT_MODAL = 'INIT_MEDIA_EDIT_MODAL';
+
+export const COMPOSE_CHANGE_MEDIA_DESCRIPTION = 'COMPOSE_CHANGE_MEDIA_DESCRIPTION';
+export const COMPOSE_CHANGE_MEDIA_FOCUS       = 'COMPOSE_CHANGE_MEDIA_FOCUS';
+
 const messages = defineMessages({
   uploadErrorLimit: { id: 'upload_error.limit', defaultMessage: 'File upload limit exceeded.' },
   uploadErrorPoll:  { id: 'upload_error.poll', defaultMessage: 'File upload not allowed with polls.' },
@@ -97,6 +105,23 @@ export function replyCompose(status, routerHistory) {
 export function cancelReplyCompose() {
   return {
     type: COMPOSE_REPLY_CANCEL,
+  };
+};
+
+export function quoteCompose(status, routerHistory) {
+  return (dispatch, getState) => {
+    dispatch({
+      type: COMPOSE_QUOTE,
+      status: status,
+    });
+
+    ensureComposeIsVisible(getState, routerHistory);
+  };
+};
+
+export function cancelQuoteCompose() {
+  return {
+    type: COMPOSE_QUOTE_CANCEL,
   };
 };
 
@@ -147,6 +172,7 @@ export function submitCompose(routerHistory) {
       spoiler_text: getState().getIn(['compose', 'spoiler']) ? getState().getIn(['compose', 'spoiler_text'], '') : '',
       visibility: getState().getIn(['compose', 'privacy']),
       poll: getState().getIn(['compose', 'poll'], null),
+      quote_id: getState().getIn(['compose', 'quote_from'], null),
     }, {
       headers: {
         'Idempotency-Key': getState().getIn(['compose', 'idempotencyKey']),
@@ -305,6 +331,32 @@ export const uploadThumbnailFail = error => ({
   error,
   skipLoading: true,
 });
+
+export function initMediaEditModal(id) {
+  return dispatch => {
+    dispatch({
+      type: INIT_MEDIA_EDIT_MODAL,
+      id,
+    });
+
+    dispatch(openModal('FOCAL_POINT', { id }));
+  };
+};
+
+export function onChangeMediaDescription(description) {
+  return {
+    type: COMPOSE_CHANGE_MEDIA_DESCRIPTION,
+    description,
+  };
+};
+
+export function onChangeMediaFocus(focusX, focusY) {
+  return {
+    type: COMPOSE_CHANGE_MEDIA_FOCUS,
+    focusX,
+    focusY,
+  };
+};
 
 export function changeUploadCompose(id, params) {
   return (dispatch, getState) => {

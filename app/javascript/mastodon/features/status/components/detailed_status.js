@@ -85,12 +85,17 @@ class DetailedStatus extends ImmutablePureComponent {
 
   handleAccountClick = (e) => {
     if (e.button === 0 && !(e.ctrlKey || e.metaKey) && this.context.router) {
-      const id = e.currentTarget.getAttribute('data-id');
       e.preventDefault();
-      this.context.router.history.push(`/accounts/${id}`);
+      this.context.router.history.push(`/accounts/${this.props.status.getIn(['account', 'id'])}`);
     }
-
     e.stopPropagation();
+  }
+
+  handleQuoteAccountClick = (e) => {
+    if (e.button === 0 && !(e.ctrlKey || e.metaKey) && this.context.router) {
+      e.preventDefault();
+      this.context.router.history.push(`/accounts/${this.props.status.getIn(['quote', 'account', 'id'])}`);
+    }
   }
 
   handleOpenVideo = (options) => {
@@ -240,7 +245,7 @@ class DetailedStatus extends ImmutablePureComponent {
       } else {
         quote = (
           <div className='quote-status' data-id={quote_status.get('id')} dataurl={quote_status.get('url')}>
-            <a href={quote_status.getIn(['account', 'url'])} onClick={this.handleAccountClick} data-id={quote_status.getIn(['account', 'id'])} className='detailed-status__display-name'>
+            <a href={quote_status.getIn(['account', 'url'])} onClick={this.handleQuoteAccountClick} data-id={quote_status.getIn(['account', 'id'])} className='detailed-status__display-name'>
               <div className='detailed-status__display-avatar'><Avatar account={quote_status.get('account')} size={18} /></div>
               <DisplayName account={quote_status.get('account')} localDomain={this.props.domain} />
             </a>
